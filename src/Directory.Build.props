@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <Version>0.0.0-nightly</Version>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <Copyright>©FUJIWARA, Yusuke</Copyright>
+    <Description>Layered Stream library</Description>
+    <Product>LayeredStream</Product>
+    <AssemblyTitle>LayeredStream</AssemblyTitle>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+  <Import Project="Properties.props" Condition="Exists('Properties.props')">
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.11.0" />
+    <PackageReference Include="Moq" Version="4.10.1" />
+  </ItemGroup>
+</Project>
