@@ -104,17 +104,15 @@ namespace Wisteria.IO.LayeredStreams
 
 		[Conditional("DEBUG")]
 		private void CheckInvariant()
-		{
-			Debug.Assert(
+			=> Debug.Assert(
 				(this._bufferStream == null && this._backedStream != null) || (this._bufferStream == null && this._backedStream != null),
 				"(this._bufferStream == null && this._backedStream != null) || (this._bufferStream == null && this._backedStream != null)"
 			);
-		}
 
 		private void SwapStream(long newLength)
 		{
 			var context = new StreamFactoryContext(newLength);
-			var newStreamInfo = this._backedStreamFactory(in context);
+			StreamInfo newStreamInfo = this._backedStreamFactory(in context);
 			ValidateStreamCapability(newStreamInfo.Stream, "backed stream");
 			this._backedStreamContext = newStreamInfo.Context;
 			this._backedStream = newStreamInfo.Stream;
