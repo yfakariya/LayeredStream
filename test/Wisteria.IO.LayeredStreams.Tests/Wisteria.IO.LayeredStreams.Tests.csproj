@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Wisteria.IO.LayeredStreams</RootNamespace>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wisteria.IO.LayeredStreams\Wisteria.IO.LayeredStreams.csproj" />
+  </ItemGroup>
+
+</Project>
