@@ -11,6 +11,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+#if !NETCOREAPP2_1
+using ValueTask = System.Threading.Tasks.Task;
+#endif // !NETCOREAPP2_1
+
 namespace Wisteria.IO.LayeredStreams
 {
 	public sealed class LayeredStream : Stream
@@ -111,37 +115,51 @@ namespace Wisteria.IO.LayeredStreams
 
 		private void SwapStream(long newLength)
 		{
+			this.PrepareBackStream(newLength);
+			this._bufferStream!.CopyTo(this._backedStream!);
+			this.CleanUpBufferStream();
+			this.CheckInvariant();
+		}
+
+		private async ValueTask SwapStreamAsync(long newLength, CancellationToken cancellationToken)
+		{
+			this.PrepareBackStream(newLength);
+			await this._bufferStream!.CopyToAsync(this._backedStream!, 81920, cancellationToken).ConfigureAwait(false);
+			this.CleanUpBufferStream();
+			this.CheckInvariant();
+		}
+
+		private void PrepareBackStream(long newLength)
+		{
 			var context = new StreamFactoryContext(newLength);
 			StreamInfo newStreamInfo = this._backedStreamFactory(in context);
 			ValidateStreamCapability(newStreamInfo.Stream, "backed stream");
 			this._backedStreamContext = newStreamInfo.Context;
 			this._backedStream = newStreamInfo.Stream;
+		}
 
+		private void CleanUpBufferStream()
+		{
 			this._bufferStreamCleaner(new StreamInfo(this._bufferStream!, this._bufferStreamContext));
 			this._bufferStreamContext = null;
 			this._bufferStream = null;
-
-			this.CheckInvariant();
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private bool SwapIfNeeded(int requiredCount)
+		private SwapStatus QuerySwapNeeded(int requiredCount)
 		{
 			if (this._bufferStream == null)
 			{
-				// Already swapped.
-				return true;
+				return SwapStatus.AlreadySwapped;
 			}
 
 			var newLength = this._bufferStream.Length + requiredCount;
 			if (newLength > this._thresholdInBytes)
 			{
-				this.SwapStream(newLength);
-				// Swapped.
-				return true;
+				return SwapStatus.Required;
 			}
 
-			return false;
+			return SwapStatus.NotRequired;
 		}
 
 		private static void ValidateStreamCapability(Stream stream, string label)
@@ -181,10 +199,18 @@ namespace Wisteria.IO.LayeredStreams
 		{
 			this.CheckInvariant();
 
-			if (!this.SwapIfNeeded(count))
+			switch (this.QuerySwapNeeded(count))
 			{
-				this._bufferStream!.Write(buffer, offset, count);
-				return;
+				case SwapStatus.Required:
+				{
+					this.SwapStream(count);
+					goto case SwapStatus.AlreadySwapped;
+				}
+				case SwapStatus.AlreadySwapped:
+				{
+					this._bufferStream!.Write(buffer, offset, count);
+					return;
+				}
 			}
 
 			this._backedStream!.Write(buffer, offset, count);
@@ -194,25 +220,42 @@ namespace Wisteria.IO.LayeredStreams
 		{
 			this.CheckInvariant();
 
-			if (!this.SwapIfNeeded(1))
+			switch (this.QuerySwapNeeded(1))
 			{
-				this._bufferStream!.WriteByte(value);
-				return;
+				case SwapStatus.Required:
+				{
+					this.SwapStream(1);
+					goto case SwapStatus.AlreadySwapped;
+				}
+				case SwapStatus.AlreadySwapped:
+				{
+					this._bufferStream!.WriteByte(value);
+					return;
+				}
 			}
 
 			this._backedStream!.WriteByte(value);
 		}
 
-		public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+		public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
 			this.CheckInvariant();
 
-			if (!this.SwapIfNeeded(count))
+			switch (this.QuerySwapNeeded(count))
 			{
-				return this._bufferStream!.WriteAsync(buffer, offset, count, cancellationToken);
+				case SwapStatus.Required:
+				{
+					await this.SwapStreamAsync(count, cancellationToken).ConfigureAwait(false);
+					goto case SwapStatus.AlreadySwapped;
+				}
+				case SwapStatus.AlreadySwapped:
+				{
+					await this._bufferStream!.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+					return;
+				}
 			}
 
-			return this._backedStream!.WriteAsync(buffer, offset, count, cancellationToken);
+			await this._backedStream!.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 		}
 
 		public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
@@ -262,27 +305,51 @@ namespace Wisteria.IO.LayeredStreams
 		{
 			this.CheckInvariant();
 
-			if (!this.SwapIfNeeded(buffer.Length))
+			switch (this.QuerySwapNeeded(buffer.Length))
 			{
-				this._bufferStream!.Write(buffer);
-				return;
+				case SwapStatus.Required:
+				{
+					this.SwapStream(buffer.Length);
+					goto case SwapStatus.AlreadySwapped;
+				}
+				case SwapStatus.AlreadySwapped:
+				{
+					this._bufferStream!.Write(buffer);
+					return;
+				}
 			}
 
 			this._backedStream!.Write(buffer);
 		}
 
-		public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+		public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
 		{
 			this.CheckInvariant();
 
-			if (!this.SwapIfNeeded(buffer.Length))
+			switch (this.QuerySwapNeeded(buffer.Length))
 			{
-				return this._bufferStream!.WriteAsync(buffer, cancellationToken);
+				case SwapStatus.Required:
+				{
+					await this.SwapStreamAsync(buffer.Length, cancellationToken).ConfigureAwait(false);
+					goto case SwapStatus.AlreadySwapped;
+				}
+				case SwapStatus.AlreadySwapped:
+				{
+					await this._bufferStream!.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+					return;
+				}
 			}
 
-			return this._backedStream!.WriteAsync(buffer, cancellationToken);
+			await this._backedStream!.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
 		}
 
 #endif // NETCOREAPP2_1
+
+		private enum SwapStatus
+		{
+			NotRequired = 0,
+			AlreadySwapped,
+			Required
+		}
 	}
 }
