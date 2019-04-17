@@ -365,5 +365,28 @@ namespace Wisteria.IO.LayeredStreams
 			AlreadySwapped,
 			Required
 		}
+
+#if DEBUG
+
+		internal Endoscope DebugEndoscope => new Endoscope(this);
+
+		internal readonly struct Endoscope
+		{
+			private readonly LayeredStream _enclosing;
+
+			public Stream? BackedStream => this._enclosing._backedStream;
+			public Action<StreamInfo> BackedStreamCleaner => this._enclosing._backedStreamCleaner;
+			public object? BackedStreamContext => this._enclosing._backedStreamContext;
+			public StreamFactory BackedStreamFactory => this._enclosing._backedStreamFactory;
+			public Stream? BufferStream => this._enclosing._bufferStream;
+			public Action<StreamInfo> BufferStreamCleaner => this._enclosing._bufferStreamCleaner;
+			public object? BufferStreamContext => this._enclosing._bufferStreamContext;
+
+			internal Endoscope(LayeredStream enclosing)
+			{
+				this._enclosing = enclosing;
+			}
+		}
+#endif // DEBUG
 	}
 }
