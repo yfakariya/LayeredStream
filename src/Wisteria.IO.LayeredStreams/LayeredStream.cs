@@ -53,7 +53,7 @@ namespace Wisteria.IO.LayeredStreams
 
 			this._backedStreamFactory = options.BackedStreamFactory ?? this.CreateDefaultBackedStream;
 			this._backedStreamCleaner = options.BackedStreamCleaner ?? CleanUpDefaultBackedStream;
-			var bufferStreamInfo = (options.BufferStreamFactory?? CreateDefaultBufferStream)(new StreamFactoryContext(options.InitialCapacity));
+			var bufferStreamInfo = (options.BufferStreamFactory ?? CreateDefaultBufferStream)(new StreamFactoryContext(options.InitialCapacity));
 			ValidateStreamCapability(bufferStreamInfo.Stream, "buffer stream");
 			this._bufferStreamContext = bufferStreamInfo.Context;
 			this._bufferStream = bufferStreamInfo.Stream;
