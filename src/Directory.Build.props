@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
     <Version>0.0.0-nightly</Version>
     <AssemblyVersion>0.0.0.0</AssemblyVersion>
@@ -9,7 +10,7 @@
     <AssemblyTitle>LayeredStream</AssemblyTitle>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
-  <Import Project="Properties.props" Condition="Exists('Properties.props')">
+  <Import Project="Properties.props" Condition="Exists('Properties.props')" />
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.11.0" />
     <PackageReference Include="Moq" Version="4.10.1" />
