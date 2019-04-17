@@ -45,6 +45,20 @@ namespace Wisteria.IO.LayeredStreams
 			set => this.EffectiveStream.Position = value;
 		}
 
+		public override bool CanTimeout => this.EffectiveStream.CanTimeout;
+
+		public override int ReadTimeout
+		{
+			get => this.EffectiveStream.ReadTimeout;
+			set => this.EffectiveStream.ReadTimeout = value;
+		}
+
+		public override int WriteTimeout
+		{
+			get => this.EffectiveStream.WriteTimeout;
+			set => this.EffectiveStream.WriteTimeout = value;
+		}
+
 		public LayeredStream() : this(default) { }
 
 		public LayeredStream(in LayeredStreamOptions options)
