@@ -21,7 +21,7 @@ namespace Wisteria.IO.LayeredStreams
 	{
 		private readonly int _thresholdInBytes;
 		private readonly Action<StreamInfo> _bufferStreamCleaner;
-		private readonly StreamFactory _backedStreamFactory;
+		private readonly Func<StreamFactoryContext, StreamInfo> _backedStreamFactory;
 		private readonly Action<StreamInfo> _backedStreamCleaner;
 		private readonly bool _preferAsync;
 		private Stream? _bufferStream;
@@ -76,7 +76,7 @@ namespace Wisteria.IO.LayeredStreams
 			this._preferAsync = options.PreferAsync;
 		}
 
-		private StreamInfo CreateDefaultBackedStream(in StreamFactoryContext context)
+		private StreamInfo CreateDefaultBackedStream(StreamFactoryContext context)
 		{
 			var file = Path.GetTempFileName();
 			var stream = new FileStream(file, FileMode.Create, FileAccess.ReadWrite, FileShare.Read, 64 * 1024, this._preferAsync ? FileOptions.Asynchronous : FileOptions.None);
@@ -91,7 +91,7 @@ namespace Wisteria.IO.LayeredStreams
 			File.Delete(path);
 		}
 
-		private static StreamInfo CreateDefaultBufferStream(in StreamFactoryContext context)
+		private static StreamInfo CreateDefaultBufferStream(StreamFactoryContext context)
 			=> new StreamInfo(new MemoryStream(checked((int)context.NewLength)));
 
 		private static void CleanUpDefaultBufferStream(StreamInfo info)
@@ -146,7 +146,7 @@ namespace Wisteria.IO.LayeredStreams
 		private void PrepareBackStream(long newLength)
 		{
 			var context = new StreamFactoryContext(newLength);
-			StreamInfo newStreamInfo = this._backedStreamFactory(in context);
+			StreamInfo newStreamInfo = this._backedStreamFactory(context);
 			ValidateStreamCapability(newStreamInfo.Stream, "backed stream");
 			this._backedStreamContext = newStreamInfo.Context;
 			this._backedStream = newStreamInfo.Stream;
@@ -377,7 +377,7 @@ namespace Wisteria.IO.LayeredStreams
 			public Stream? BackedStream => this._enclosing._backedStream;
 			public Action<StreamInfo> BackedStreamCleaner => this._enclosing._backedStreamCleaner;
 			public object? BackedStreamContext => this._enclosing._backedStreamContext;
-			public StreamFactory BackedStreamFactory => this._enclosing._backedStreamFactory;
+			public Func<StreamFactoryContext, StreamInfo> BackedStreamFactory => this._enclosing._backedStreamFactory;
 			public Stream? BufferStream => this._enclosing._bufferStream;
 			public Action<StreamInfo> BufferStreamCleaner => this._enclosing._bufferStreamCleaner;
 			public object? BufferStreamContext => this._enclosing._bufferStreamContext;

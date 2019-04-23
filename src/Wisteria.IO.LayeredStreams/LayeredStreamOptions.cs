@@ -1,4 +1,4 @@
-﻿// Copyright © FUJIWARA, Yusuke 
+// Copyright © FUJIWARA, Yusuke 
 // This file is licensed to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -28,9 +28,9 @@ namespace Wisteria.IO.LayeredStreams
 			}
 		}
 
-		public StreamFactory? BufferStreamFactory { get; set; }
+		public Func<StreamFactoryContext, StreamInfo>? BufferStreamFactory { get; set; }
 		public Action<StreamInfo>? BufferStreamCleaner { get; set; }
-		public StreamFactory? BackedStreamFactory { get; set; }
+		public Func<StreamFactoryContext, StreamInfo>? BackedStreamFactory { get; set; }
 		public Action<StreamInfo>? BackedStreamCleaner { get; set; }
 		public bool PreferAsync { get; set; }
 		private int _initialCapacity;
