@@ -64,7 +64,7 @@ namespace Wisteria.IO.LayeredStreams
 			);
 		}
 
-		private static void VerifyFactoryAndCleanerAreNotSymmetric(StreamFactory? factory, Action<StreamInfo>? cleaner, string factoryName, string cleanerName)
+		private static void VerifyFactoryAndCleanerAreNotSymmetric(Func<StreamFactoryContext, StreamInfo>? factory, Action<StreamInfo>? cleaner, string factoryName, string cleanerName)
 		{
 			if (factory == null)
 			{
