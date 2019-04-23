@@ -381,11 +381,15 @@ namespace Wisteria.IO.LayeredStreams
 			public Stream? BufferStream => this._enclosing._bufferStream;
 			public Action<StreamInfo> BufferStreamCleaner => this._enclosing._bufferStreamCleaner;
 			public object? BufferStreamContext => this._enclosing._bufferStreamContext;
+			public Stream EffectiveStream => this._enclosing.EffectiveStream;
 
 			internal Endoscope(LayeredStream enclosing)
 			{
 				this._enclosing = enclosing;
 			}
+
+			public void SwapStream(long newLength)
+				=> this._enclosing.SwapStream(newLength);
 		}
 #endif // DEBUG
 	}
