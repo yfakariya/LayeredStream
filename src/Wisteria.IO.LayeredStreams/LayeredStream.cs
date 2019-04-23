@@ -123,8 +123,8 @@ namespace Wisteria.IO.LayeredStreams
 		[Conditional("DEBUG")]
 		private void CheckInvariant()
 			=> Debug.Assert(
-				(this._bufferStream == null && this._backedStream != null) || (this._bufferStream == null && this._backedStream != null),
-				"(this._bufferStream == null && this._backedStream != null) || (this._bufferStream == null && this._backedStream != null)"
+				(this._bufferStream == null && this._backedStream != null) || (this._bufferStream != null && this._backedStream == null),
+				"(this._bufferStream == null && this._backedStream != null) || (this._bufferStream != null && this._backedStream == null)"
 			);
 
 		private void SwapStream(long newLength)
