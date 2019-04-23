@@ -28,35 +28,67 @@ namespace Wisteria.IO.LayeredStreams
 		private object? _bufferStreamContext;
 		private Stream? _backedStream;
 		private object? _backedStreamContext;
+		private bool _isDisposed;
 
 		private Stream EffectiveStream => this._backedStream ?? this._bufferStream!;
 
-		public override bool CanRead => true;
+		public override bool CanRead => !this._isDisposed;
 
-		public override bool CanSeek => true;
+		public override bool CanSeek => !this._isDisposed;
 
-		public override bool CanWrite => true;
+		public override bool CanWrite => !this._isDisposed;
 
-		public override long Length => this.EffectiveStream.Length;
+		public override long Length
+		{
+			get
+			{
+				this.VerifyNotDisposed();
+				return this.EffectiveStream.Length;
+			}
+		}
 
 		public override long Position
 		{
-			get => this.EffectiveStream.Position;
-			set => this.EffectiveStream.Position = value;
+			get
+			{
+				this.VerifyNotDisposed();
+				return this.EffectiveStream.Position;
+			}
+			set
+			{
+				this.VerifyNotDisposed();
+				this.EffectiveStream.Position = value;
+			}
 		}
 
-		public override bool CanTimeout => this.EffectiveStream.CanTimeout;
+		public override bool CanTimeout => !this._isDisposed && this.EffectiveStream.CanTimeout;
 
 		public override int ReadTimeout
 		{
-			get => this.EffectiveStream.ReadTimeout;
-			set => this.EffectiveStream.ReadTimeout = value;
+			get
+			{
+				this.VerifyNotDisposed();
+				return this.EffectiveStream.ReadTimeout;
+			}
+			set
+			{
+				this.VerifyNotDisposed();
+				this.EffectiveStream.ReadTimeout = value;
+			}
 		}
 
 		public override int WriteTimeout
 		{
-			get => this.EffectiveStream.WriteTimeout;
-			set => this.EffectiveStream.WriteTimeout = value;
+			get
+			{
+				this.VerifyNotDisposed();
+				return this.EffectiveStream.WriteTimeout;
+			}
+			set
+			{
+				this.VerifyNotDisposed();
+				this.EffectiveStream.WriteTimeout = value;
+			}
 		}
 
 		public LayeredStream() : this(default) { }
@@ -151,8 +183,24 @@ namespace Wisteria.IO.LayeredStreams
 				}
 			}
 
+			this._isDisposed = true;
+
 			base.Dispose(disposing);
 		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private void VerifyNotDisposed()
+		{
+			if (this._isDisposed)
+			{
+				ThrowObjectDisposedException();
+			}
+
+			this.CheckInvariant();
+		}
+
+		private static void ThrowObjectDisposedException()
+			=> throw new ObjectDisposedException(typeof(LayeredStream).FullName);
 
 		[Conditional("DEBUG")]
 		private void CheckInvariant()
@@ -229,23 +277,38 @@ namespace Wisteria.IO.LayeredStreams
 		}
 
 		public override void Flush()
-			=> this.EffectiveStream.Flush();
+		{
+			this.VerifyNotDisposed();
+			this.EffectiveStream.Flush();
+		}
 
 		public override Task FlushAsync(CancellationToken cancellationToken)
-			=> this.EffectiveStream.FlushAsync(cancellationToken);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.FlushAsync(cancellationToken);
+		}
 
 		public override int Read(byte[] buffer, int offset, int count)
-			=> this.EffectiveStream.Read(buffer, offset, count);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.Read(buffer, offset, count);
+		}
 
 		public override int ReadByte()
-			=> this.EffectiveStream.ReadByte();
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.ReadByte();
+		}
 
 		public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-			=> this.EffectiveStream.ReadAsync(buffer, offset, count, cancellationToken);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.ReadAsync(buffer, offset, count, cancellationToken);
+		}
 
 		public override void Write(byte[] buffer, int offset, int count)
 		{
-			this.CheckInvariant();
+			this.VerifyNotDisposed();
 
 			switch (this.QuerySwapNeeded(count))
 			{
@@ -266,7 +329,7 @@ namespace Wisteria.IO.LayeredStreams
 
 		public override void WriteByte(byte value)
 		{
-			this.CheckInvariant();
+			this.VerifyNotDisposed();
 
 			switch (this.QuerySwapNeeded(1))
 			{
@@ -287,7 +350,7 @@ namespace Wisteria.IO.LayeredStreams
 
 		public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
-			this.CheckInvariant();
+			this.VerifyNotDisposed();
 
 			switch (this.QuerySwapNeeded(count))
 			{
@@ -307,10 +370,15 @@ namespace Wisteria.IO.LayeredStreams
 		}
 
 		public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
-			=> this.EffectiveStream.CopyToAsync(destination, bufferSize, cancellationToken);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.CopyToAsync(destination, bufferSize, cancellationToken);
+		}
 
 		public override long Seek(long offset, SeekOrigin origin)
 		{
+			this.VerifyNotDisposed();
+
 			var newPosition =
 				origin switch
 			{
@@ -330,6 +398,8 @@ namespace Wisteria.IO.LayeredStreams
 
 		public override void SetLength(long value)
 		{
+			this.VerifyNotDisposed();
+
 			if (value > this._thresholdInBytes)
 			{
 				this.SwapStream(value);
@@ -341,17 +411,26 @@ namespace Wisteria.IO.LayeredStreams
 #if NETCOREAPP2_1
 
 		public override void CopyTo(Stream destination, int bufferSize)
-			=> this.EffectiveStream.CopyTo(destination, bufferSize);
+		{
+			this.VerifyNotDisposed();
+			this.EffectiveStream.CopyTo(destination, bufferSize);
+		}
 
 		public override int Read(Span<byte> buffer)
-			=> this.EffectiveStream.Read(buffer);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.Read(buffer);
+		}
 
 		public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-			=> this.EffectiveStream.ReadAsync(buffer, cancellationToken);
+		{
+			this.VerifyNotDisposed();
+			return this.EffectiveStream.ReadAsync(buffer, cancellationToken);
+		}
 
 		public override void Write(ReadOnlySpan<byte> buffer)
 		{
-			this.CheckInvariant();
+			this.VerifyNotDisposed();
 
 			switch (this.QuerySwapNeeded(buffer.Length))
 			{
@@ -372,7 +451,7 @@ namespace Wisteria.IO.LayeredStreams
 
 		public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
 		{
-			this.CheckInvariant();
+			this.VerifyNotDisposed();
 
 			switch (this.QuerySwapNeeded(buffer.Length))
 			{
