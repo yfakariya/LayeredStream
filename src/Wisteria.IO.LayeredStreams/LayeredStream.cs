@@ -218,9 +218,9 @@ namespace Wisteria.IO.LayeredStreams
 				case SwapStatus.Required:
 				{
 					this.SwapStream(count);
-					goto case SwapStatus.AlreadySwapped;
+					break;
 				}
-				case SwapStatus.AlreadySwapped:
+				case SwapStatus.NotRequired:
 				{
 					this._bufferStream!.Write(buffer, offset, count);
 					return;
@@ -239,9 +239,9 @@ namespace Wisteria.IO.LayeredStreams
 				case SwapStatus.Required:
 				{
 					this.SwapStream(1);
-					goto case SwapStatus.AlreadySwapped;
+					break;
 				}
-				case SwapStatus.AlreadySwapped:
+				case SwapStatus.NotRequired:
 				{
 					this._bufferStream!.WriteByte(value);
 					return;
@@ -260,9 +260,9 @@ namespace Wisteria.IO.LayeredStreams
 				case SwapStatus.Required:
 				{
 					await this.SwapStreamAsync(count, cancellationToken).ConfigureAwait(false);
-					goto case SwapStatus.AlreadySwapped;
+					break;
 				}
-				case SwapStatus.AlreadySwapped:
+				case SwapStatus.NotRequired:
 				{
 					await this._bufferStream!.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
 					return;
@@ -324,9 +324,9 @@ namespace Wisteria.IO.LayeredStreams
 				case SwapStatus.Required:
 				{
 					this.SwapStream(buffer.Length);
-					goto case SwapStatus.AlreadySwapped;
+					break;
 				}
-				case SwapStatus.AlreadySwapped:
+				case SwapStatus.NotRequired:
 				{
 					this._bufferStream!.Write(buffer);
 					return;
@@ -345,9 +345,9 @@ namespace Wisteria.IO.LayeredStreams
 				case SwapStatus.Required:
 				{
 					await this.SwapStreamAsync(buffer.Length, cancellationToken).ConfigureAwait(false);
-					goto case SwapStatus.AlreadySwapped;
+					break;
 				}
-				case SwapStatus.AlreadySwapped:
+				case SwapStatus.NotRequired:
 				{
 					await this._bufferStream!.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
 					return;
