@@ -47,39 +47,5 @@ namespace Wisteria.IO.LayeredStreams
 				this._initialCapacity = value;
 			}
 		}
-
-		internal void Verify()
-		{
-			VerifyFactoryAndCleanerAreNotSymmetric(
-				this.BufferStreamFactory,
-				this.BufferStreamCleaner,
-				nameof(this.BufferStreamFactory),
-				nameof(this.BufferStreamCleaner)
-			);
-			VerifyFactoryAndCleanerAreNotSymmetric(
-				this.BackedStreamFactory,
-				this.BackedStreamCleaner,
-				nameof(this.BackedStreamFactory),
-				nameof(this.BackedStreamCleaner)
-			);
-		}
-
-		private static void VerifyFactoryAndCleanerAreNotSymmetric(Func<StreamFactoryContext, StreamInfo>? factory, Action<StreamInfo>? cleaner, string factoryName, string cleanerName)
-		{
-			if (factory == null)
-			{
-				if (cleaner != null)
-				{
-					ThrowFactoryAndCleanerAreNotSymmetric(factoryName, cleanerName);
-				}
-			}
-			else if (cleaner == null)
-			{
-				ThrowFactoryAndCleanerAreNotSymmetric(factoryName, cleanerName);
-			}
-		}
-
-		private static void ThrowFactoryAndCleanerAreNotSymmetric(string factoryName, string cleanerName)
-			=> throw new InvalidOperationException($"Both of {factoryName} and {cleanerName} are null or non-null.");
 	}
 }

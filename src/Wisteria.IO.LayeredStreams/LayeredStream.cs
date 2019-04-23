@@ -63,7 +63,7 @@ namespace Wisteria.IO.LayeredStreams
 
 		public LayeredStream(in LayeredStreamOptions options)
 		{
-			options.Verify();
+			ValidateOptions(in options);
 
 			this._backedStreamFactory = options.BackedStreamFactory ?? this.CreateDefaultBackedStream;
 			this._backedStreamCleaner = options.BackedStreamCleaner ?? CleanUpDefaultBackedStream;
@@ -75,6 +75,40 @@ namespace Wisteria.IO.LayeredStreams
 			this._thresholdInBytes = options.ThresholdInBytes;
 			this._preferAsync = options.PreferAsync;
 		}
+
+		private static void ValidateOptions(in LayeredStreamOptions options)
+		{
+			ValidateFactoryAndCleanerAreNotSymmetric(
+				options.BufferStreamFactory,
+				options.BufferStreamCleaner,
+				nameof(options.BufferStreamFactory),
+				nameof(options.BufferStreamCleaner)
+			);
+			ValidateFactoryAndCleanerAreNotSymmetric(
+				options.BackedStreamFactory,
+				options.BackedStreamCleaner,
+				nameof(options.BackedStreamFactory),
+				nameof(options.BackedStreamCleaner)
+			);
+		}
+
+		private static void ValidateFactoryAndCleanerAreNotSymmetric(Func<StreamFactoryContext, StreamInfo>? factory, Action<StreamInfo>? cleaner, string factoryName, string cleanerName)
+		{
+			if (factory == null)
+			{
+				if (cleaner != null)
+				{
+					ThrowFactoryAndCleanerAreNotSymmetric(factoryName, cleanerName);
+				}
+			}
+			else if (cleaner == null)
+			{
+				ThrowFactoryAndCleanerAreNotSymmetric(factoryName, cleanerName);
+			}
+		}
+
+		private static void ThrowFactoryAndCleanerAreNotSymmetric(string factoryName, string cleanerName)
+			=> throw new ArgumentException($"Both of {factoryName} and {cleanerName} are null or non-null.", "options");
 
 		private StreamInfo CreateDefaultBackedStream(StreamFactoryContext context)
 		{
