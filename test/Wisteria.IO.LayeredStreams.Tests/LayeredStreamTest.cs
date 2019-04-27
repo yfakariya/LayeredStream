@@ -329,9 +329,6 @@ namespace Wisteria.IO.LayeredStreams
 			Assert.That(() => target.SetLength(0), Throws.InstanceOf<ObjectDisposedException>(), "SetLength(Int64)");
 		}
 
-#warning TODO: Default -> Buffer/File including temp file handling
-#warning TODO: SetLength, CanXxx check, Seek, Flush
-
 		private static void TestWriteCore(Action<LayeredStream> action)
 		{
 			using var target =
@@ -470,6 +467,11 @@ namespace Wisteria.IO.LayeredStreams
 					Assert.That(target.DebugEndoscope.EffectiveStream, Is.SameAs(target.DebugEndoscope.BackedStream));
 				}
 			);
+
+#warning TODO: Default -> Buffer/File including temp file handling
+#warning TODO: SetLength, CanXxx check, Seek, Flush
+#warning TODO: stream verification
+
 
 		private sealed class TestStream : Stream
 		{
